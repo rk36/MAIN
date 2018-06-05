@@ -4,6 +4,31 @@ import inspect
 import sys
 import datetime
 import MySQLdb
+import RPi.GPIO as GPIO
+from hx711 import HX711
+
+
+GPIO.cleanup()
+GPIO.setwarnings(False)
+
+
+def cleanAndExit():
+    print "Cleaning..."
+    GPIO.cleanup()
+    print "Bye!"
+    sys.exit()
+
+hx = HX711(27, 17)
+
+hx.set_reading_format("LSB", "MSB")
+hx.set_reference_unit(-4)
+scale=-10000;
+# hx711 configuration
+
+def read_weight():
+    val = (int)(42.65*(hx.read_average(3)-8055600)/(-1000))
+    return val
+    
 
 CONSUMER_ID = 2000000000000
 RETAILER_ID = 123456789012
@@ -20,27 +45,27 @@ def lineno():
 
 valve_state = 0
 
+relay_pin = 13
 
-#import RPi.GPIO as GPIO
-#for i in range(0, 10):
-    #GPIO.setmode(GPIO.BCM)
-    #GPIO.setup(17, GPIO.OUT)
-    #GPIO.output(17, GPIO.LOW)
-    #time.sleep(0.5)
+for i in range(0, 10):
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setup(relay_pin, GPIO.OUT)
+    GPIO.output(relay_pin, GPIO.LOW)
+    time.sleep(0.5)
 
 
 
-def send_command(iter):
+def send_command(iter,current_weight):
 
-        #i = 0
-        #weight = i      # function included in weight.py
-        #read_time = time.time()
-        #read_date = datetime.datetime.fromtimestamp(read_time).strftime('%Y/%m/%d')
-        #read_time = datetime.datetime.fromtimestamp(read_time).strftime('%H:%M:%S')
-        #command = "SEND " + str(read_date) + " " + str(read_time) + " " + str(weight)
-        #print(command)
-        #time.sleep(2)
-        #i += 1
+#         i = 0
+#         weight = i      # function included in weight.py
+#         read_time = time.time()
+#         read_date = datetime.datetime.fromtimestamp(read_time).strftime('%Y/%m/%d')
+#         read_time = datetime.datetime.fromtimestamp(read_time).strftime('%H:%M:%S')
+#         command = "SEND " + str(read_date) + " " + str(read_time) + " " + str(weight)
+#         print(command)
+#         time.sleep(2)
+#         i += 1
 
 
         # gas = read_gas()
@@ -56,7 +81,7 @@ def send_command(iter):
         global weight_at_recharge
         
         i = 0
-        weight = i      # function included in weight.py
+        weight = current_weight      # function included in weight.py
         read_time = time.time()
         read_date = datetime.datetime.fromtimestamp(read_time).strftime('%Y/%m/%d')
         read_time = datetime.datetime.fromtimestamp(read_time).strftime('%H:%M:%S')
@@ -114,7 +139,7 @@ def send_command(iter):
                         print("\n##....Status Updated....##\n")
 
                         if(use_weight > 0):
-                            #weight_at_recharge = read_weight()
+                            weight_at_recharge = read_weight()
                             print("\nSystem Recharged for Rs. " + str(use_weight) + "\n")
                         break;
                 except Exception as e:
@@ -143,32 +168,32 @@ for i in range(1000):
 
     print("Use Weight : " + str(use_weight) + " g")
 
-    #current_weight = read_weight()
-    #weight_used = weight_at_recharge - current_weight
-    #if(use_weight > 0 and weight_used < use_weight):
-    #    use_weight = use_weight - weight_used
-    #    #######..........SHUT ON VALVE...........######
-    #    GPIO.output(relay_pin,GPIO.HIGH)
-    #    valve_state = 1:
-    #if(use_weight > 0 and weight_used <= use_weight):
-    #     use_weight = 0
-    #     #######..........SHUT OFF VALVE...........######
-    #     GPIO.output(relay_pin, GPIO.LOW)
-    #     valve_state = 0:
-    #if(use_weight == 0):
-    #     #######..........SHUT OFF VALVE...........######
-    #     GPIO.output(relay_pin,GPIO.LOW)
-    #     valve_state = 0:
+    current_weight = read_weight()
+    weight_used = weight_at_recharge - current_weight
+    if(use_weight > 0 and weight_used < use_weight):
+       use_weight = use_weight - weight_used
+       #######..........SHUT ON VALVE...........######
+       GPIO.output(relay_pin,GPIO.HIGH)
+       valve_state = 1:
+    if(use_weight > 0 and weight_used <= use_weight):
+        use_weight = 0
+        #######..........SHUT OFF VALVE...........######
+        GPIO.output(relay_pin, GPIO.LOW)
+        valve_state = 0:
+    if(use_weight == 0):
+        #######..........SHUT OFF VALVE...........######
+        GPIO.output(relay_pin,GPIO.LOW)
+        valve_state = 0:
 
-    send_command(i)
-    #send_command(i,current_weight)
+    #send_command(i)
+    send_command(i,current_weight)
     time.sleep(10)
-    # if valve_state = 0:
-        ####    "Switch off Valve" ####
-    #    GPIO.output(relay_pin,GPIO.LOW)
-    # else:
-        ####    "Switch on Valve"  ####
-    #    GPIO.output(relay_pin,GPIO.HIGH)
+    if valve_state = 0:
+        ###    "Switch off Valve" ####
+       GPIO.output(relay_pin,GPIO.LOW)
+    else:
+        ###    "Switch on Valve"  ####
+       GPIO.output(relay_pin,GPIO.HIGH)
 
 
 
