@@ -6,7 +6,7 @@ import datetime
 import MySQLdb
 
 CONSUMER_ID = 2000000000000
-RETAILER_ID = 1234567890
+RETAILER_ID = 123456789012
 host = '127.0.0.1'
 port = 5560
 use_weight = 0
